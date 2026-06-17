@@ -1,9 +1,10 @@
-##Sistema de Mensajeria en Tiempo Real##
-Este proyecto consiste en una aplicacion de mensajeria estructurada en arquitectura cliente-servidor utilizando Node.js, Express y Socket.io. Permite la comunicacion simultanea a traves de canales globales y especificacion de canales privados empleando un  filtrado avanzado por direccion IP.
+## Sistema de Mensajeria en Tiempo Real
+
+Este proyecto consiste en una aplicacion de mensajeria estructurada en arquitectura cliente-servidor utilizando Node.js, Express y Socket.io. Permite la comunicacion simultanea a traves de canales globales y especificacion de canales privados empleando un filtrado avanzado por direccion IP.
 
 ---
 
-##Caracteristicas del Proyecto##
+## Caracteristicas del Proyecto
 
 **Servidor de Archivos Estaticos:** Desarrollado con Express para servir la interfaz del cliente.
 
