@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Proyecto Mensajería</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #e9ecef; }
+        .chat-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .box { border: 1px solid #dee2e6; padding: 10px; height: 130px; overflow-y: auto; margin-bottom: 15px; background: #f8f9fa; border-radius: 5px; }
+        .flex { display: flex; gap: 10px; margin-bottom: 15px; }
+        input, select { flex: 1; padding: 8px; border: 1px solid #ced4da; border-radius: 5px; }
+        button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        h3 { margin-top: 0; color: #495057; }
+        .badge { background: #6c757d; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <h2>Sistema de Mensajería</h2>
+    
+    <p><b>Usuarios conectados:</b> <span id="totalUsuarios" class="badge">0</span></p>
+
+    <div class="flex">
+        <input type="text" id="nombreInput" placeholder="Introduce tu nombre para chatear...">
+        <button id="btnRegistrar">Registrarme</button>
+    </div>
+
+    <hr>
+
+    <h3>Mensajes Globales</h3>
+    <div id="chatGlobal" class="box"></div>
+    <div class="flex">
+        <input type="text" id="msgGlobalInput" placeholder="Escribe un mensaje global...">
+        <button id="btnGlobal">Enviar a Todos</button>
+    </div>
+
+    <h3>Mensajes Privados (Por IP)</h3>
+    <div id="chatPrivado" class="box"></div>
+    <div class="flex">
+        <select id="usuarioDestino">
+            <option value="">Selecciona un usuario destino...</option>
+        </select>
+        <input type="text" id="msgPrivadoInput" placeholder="Escribe un mensaje privado...">
+        <button id="btnPrivado">Enviar Privado</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    const totalUsuarios = document.getElementById("totalUsuarios");
+    const nombreInput = document.getElementById("nombreInput");
+    const btnRegistrar = document.getElementById("btnRegistrar");
+    const chatGlobal = document.getElementById("chatGlobal");
+    const msgGlobalInput = document.getElementById("msgGlobalInput");
+    const btnGlobal = document.getElementById("btnGlobal");
+    const chatPrivado = document.getElementById("chatPrivado");
+    const usuarioDestino = document.getElementById("usuarioDestino");
+    const msgPrivadoInput = document.getElementById("msgPrivadoInput");
+    const btnPrivado = document.getElementById("btnPrivado");
+
+    btnRegistrar.onclick = () => {
+        const nombre = nombreInput.value.trim();
+        if (nombre) {
+            socket.emit('registrar-usuario', nombre);
+            nombreInput.disabled = true;
+            btnRegistrar.disabled = true;
+        }
+    };
+
+    socket.on('actualizar-usuarios', (usuarios) => {
+        totalUsuarios.textContent = usuarios.length;
+
+        usuarioDestino.innerHTML = '<option value="">Selecciona un usuario destino...</option>';
+        
+        usuarios.forEach((u) => {
+            if(u.id !== socket.id && u.nombre !== "Sin nombre"){
+                const option = document.createElement("option");
+                option.value = u.ip; 
+                option.textContent = `${u.nombre} - ${u.ip}`;
+                usuarioDestino.appendChild(option);
+            }
+        });
+    });
+
+    btnGlobal.onclick = () => {
+        const texto = msgGlobalInput.value.trim();
+        if (texto) {
+            socket.emit('mensaje-global', { texto });
+            msgGlobalInput.value = '';
+        }
+    };
+
+    socket.on('mensaje-global', (data) => {
+        chatGlobal.innerHTML += `<p><b>[${data.hora}] ${data.de}:</b> ${data.texto}</p>`;
+        chatGlobal.scrollTop = chatGlobal.scrollHeight;
+    });
+
+    btnPrivado.onclick = () => {
+        const ipDestino = usuarioDestino.value;
+        const texto = msgPrivadoInput.value.trim();
+        if (ipDestino && texto) {
+            socket.emit("mensaje-privado-ip", { ipDestino, texto });
+            
+            const nombreDestino = usuarioDestino.options[usuarioDestino.selectedIndex].text.split(" - ")[0];
+            chatPrivado.innerHTML += `<p style="color: #6c757d;"><i>Tú para ${nombreDestino}: ${texto}</i></p>`;
+            msgPrivadoInput.value = '';
+            chatPrivado.scrollTop = chatPrivado.scrollHeight;
+        }
+    };
+
+    socket.on("mensaje-privado", (data) => {
+        chatPrivado.innerHTML += `<p style="color: #0056b3;"><b>[${data.hora}] Privado de ${data.de} (${data.ipEmisor}):</b> ${data.texto}</p>`;
+        chatPrivado.scrollTop = chatPrivado.scrollHeight;
+    });
+</script>
+</body>
+</html>
